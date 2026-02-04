@@ -1,1 +1,2 @@
-vim.lsp.enable('pylsp')
+
+require("blake")

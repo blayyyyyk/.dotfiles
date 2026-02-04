@@ -7,6 +7,37 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+    "base_keymap": "VSCode",
+    "buffer_font_fallbacks": [
+        "Menlo",
+        "Monaco",
+        "Courier New",
+        "monospace"
+    ],
+    "colorize_brackets": true,
+    "extend_comment_on_newline": false,
+    "hard_tabs": false,
+    "toolbar": {
+        "code_actions": true
+    },
+    "ui_font_weight": 500.0,
+    "prettier": {
+        "allowed": true
+    },
+    "project_panel": {
+        "hide_root": false,
+        "auto_reveal_entries": true,
+        "git_status": true,
+        "folder_icons": true,
+        "entry_spacing": "comfortable",
+        "indent_size": 15,
+        "default_width": 215.0,
+        "indent_guides": {
+            "show": "always"
+        },
+        "file_icons": false
+    },
+    "load_direnv": "shell_hook",
     "agent": {
         "default_model": {
             "provider": "anthropic",
@@ -24,19 +55,22 @@
         },
         "enabled_in_text_threads": false
     },
-    "ui_font_size": 14,
-    "buffer_font_size": 20,
+    "ui_font_size": 13.0,
+    "buffer_font_size": 13.0,
+    "buffer_line_height": "comfortable",
     "theme": {
-        "mode": "system",
-        "light": "One Light",
-        "dark": "Everforest Dark"
+        "mode": "dark",
+        "light": "Gruvbox Material Neovim Dark",
+        "dark": "Ayu Mirage"
     },
     "autosave": {
         "after_delay": {
-            "milliseconds": 500
+            "milliseconds": 1000
         }
     },
     "terminal": {
+        "font_size": 16.0,
+        "dock": "bottom",
         "shell": {
             "with_arguments": {
                 "program": "/bin/zsh",
@@ -44,9 +78,9 @@
             }
         }
     },
-    "buffer_font_family": "JetBrainsMonoNL Nerd Font Propo",
-    "buffer_font_weight": 300,
-    
+    "buffer_font_family": "JetBrainsMono Nerd Font",
+    "buffer_font_weight": 400.0,
+
     "tab_size": 4,
     "minimap": {
         "show": "always",
@@ -54,8 +88,48 @@
         "thumb_border": "left_open",
         "current_line_highlight": null
     },
-    "formatter": "prettier",
-    "relative_line_numbers": false,
+    "line_indicator_format": "long",
+    "formatter": [
+        {
+            "code_action": "source.fixAll.eslint"
+        },
+        {
+            "code_action": "source.removeUnusedImports"
+        },
+        "prettier"
+    ],
+    "indent_guides": {
+        "enabled": true,
+        "line_width": 1, // Width of guides in pixels [1-10]
+        "active_line_width": 1, // Width of active guide in pixels [1-10]
+        "coloring": "fixed", // disabled, fixed, indent_aware
+        "background_coloring": "disabled"
+    },
+    "tab_bar": {
+        "show": true, // Show/hide the tab bar
+        "show_nav_history_buttons": false, // Show/hide history buttons on tab bar
+        "show_tab_bar_buttons": false // Show hide buttons (new, split, zoom)
+    },
+    "tabs": {
+        "git_status": false, // Color to show git status
+        "close_position": "right", // Close button position (left, right, hidden)
+        "show_close_button": "always", // Close button shown (hover, always, hidden)
+        "file_icons": false, // Icon showing file type
+        // Show diagnostics in file icon (off, errors, all). Requires file_icons=true
+        "show_diagnostics": "all"
+    },
+    // Cursor shape for the default editor: bar, block, underline, hollow
+    "cursor_shape": "bar",
+    "relative_line_numbers": "disabled",
+    "title_bar": {
+        "show_branch_icon": false, // Show/hide branch icon beside branch switcher
+        "show_branch_name": true, // Show/hide branch name
+        "show_project_items": true, // Show/hide project host and name
+        "show_onboarding_banner": false, // Show/hide onboarding banners
+        "show_user_picture": true, // Show/hide user avatar
+        "show_sign_in": true, // Show/hide sign-in button
+        "show_menus": false // Show/hide menus
+    },
     "gutter": {
         "line_numbers": true, // Show/hide line numbers in the gutter.
         "runnables": true, // Show/hide runnables buttons in the gutter.
@@ -63,11 +137,70 @@
         "folds": true, // Show/hide show fold buttons in the gutter.
         "min_line_number_digits": 2 // Reserve space for N digit line numbers.
     },
-    "code_actions_on_format": {
-        "source.fixAll.eslint": true,
-        "source.removeUnusedImports": true
+    "languages": {
+        "Python": {
+            "language_servers": [
+                // Disable basedpyright and enable Ty, and otherwise
+                // use the default configuration.
+                "!pylsp",
+                "pyright",
+                "python-refactoring"
+            ],
+            "formatter": {
+                "external": {
+                    "command": "black",
+                    "arguments": ["--stdin-filename", "{buffer_path}", "-"]
+                }
+            },
+        }
     },
+    "lsp": {
+        "texlab": {
+            "settings": {
+                "texlab": {
+                    "build": {
+                        "onSave": false
+                    }
+                }
+            }
+        },
+        "jdtls": {
+            "initialization_options": {
+                "bundles": [],
+                "workspaceFolders": ["file:///Users/blakemoody/workspace"],
+                "settings": {
+                    "java": {
+                        "project": {
+                            "referencedLibraries": [
+                                "lib/j--.jar",
+                                "lib/javacc.jar"
+                            ],
+                            "sourcePaths": [
+                                "j--/src",
+                                "j--/simpleops",
+                                "j--/scanning",
+                                "j--/tests"
+                            ]
+                        },
+                        "inlayHints": {
+                            "parameterNames": {
+                                "enabled": null
+                            }
+                        },
+                        "editor": {
+                            "rulers": [120]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ui_font_family": "SF Compact Display",
+    "unstable.ui_density": "comfortable", // remove this if ui breaks
     "format_on_save": "on",
+    "outline_panel": {
+        "indent_size": 10
+    },
     "current_line_highlight": "gutter",
     "language_models": {
         "anthropic": {
