@@ -61,7 +61,7 @@
     "theme": {
         "mode": "dark",
         "light": "Gruvbox Material Neovim Dark",
-        "dark": "Ayu Mirage"
+        "dark": "Gruvbox Material Neovim Dark"
     },
     "autosave": {
         "after_delay": {
