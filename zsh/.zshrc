@@ -150,3 +150,5 @@ source <(fzf --zsh)
 export PATH=$PATH:/Users/blakemoody/.spicetify
 
 eval "$(direnv hook zsh)"
+
+

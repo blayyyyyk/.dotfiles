@@ -10,12 +10,19 @@
     "context": "Workspace",
     "bindings": {
       // "shift shift": "file_finder::Toggle"
+      "cmd-p": [
+        "task::Spawn",
+        { "task_name": "file_finder", "reveal_target": "center" }
+      ],
     }
   },
   {
     "context": "Editor",
     "bindings": {
-      
+      "ctrl-t": "outline::Toggle",
+      "ctrl-3": ["workspace::SendKeystrokes", "cmd-alt-e"],
+      "ctrl-1": ["workspace::SendKeystrokes", "ctrl-t down enter enter ctrl-3"],
+      "ctrl-2": ["workspace::SendKeystrokes", "ctrl-t up enter enter ctrl-3"],
       // "j k": ["workspace::SendKeystrokes", "escape"]
     }
   }
