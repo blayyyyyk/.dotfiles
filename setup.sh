@@ -1,8 +1,12 @@
 # Homebrew
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
 echo >> "$HOME/.bashrc";
-echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"' >> "$HOME/.bashrc";
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)";
+
+BREW_PATH=$(which brew)
+
+echo "eval \"\$($BREW_PATH shellenv bash)\"" >> "$HOME/.bashrc"
+
+eval "$($BREW_PATH shellenv bash)"
 
 # Update & upgrade
 brew update && brew upgrade;
