@@ -2,4 +2,20 @@
 */.DS_Store
 .DS_Store
 **/*/node_modules
-vscode/.vscode
+
+# VS Code writes installed extensions into ~/.vscode (stowed from here);
+# only argv.json is tracked.
+vscode/.vscode/*
+!vscode/.vscode/argv.json
+
+# Runtime state that apps write through the stowed symlinks.
+config/.config/tmux/plugins/
+config/.config/zed/prompts/**/lock.mdb
+config/.config/zed/settings_backup.json
+config/.config/cmux/*.bak
+config/.config/opencode/*.bak
+config/.config/opencode/node_modules/
+config/.config/opencode/package.json
+config/.config/opencode/package-lock.json
+config/.config/opencode/bun.lock
+__pycache__/
