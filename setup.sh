@@ -20,9 +20,9 @@ stow \
     config \
     zsh \
     vscode
-    
+
 exec zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc; && \
-    /home/linuxbrew/.linuxbrew/bin/zsh
-    
+    ~/.homebrew/bin/zsh
+
 echo "✅ Setup complete!"

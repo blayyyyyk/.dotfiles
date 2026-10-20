@@ -1,6 +1,16 @@
 -- file: init.lua
 vim.g.mapleader = "<Space>"
 
+vim.opt.mouse = "a"
+vim.opt.mousemodel = "extend"
+vim.opt.termguicolors = true
+vim.opt.laststatus = 2
+vim.opt.signcolumn = "yes"
+vim.opt.cursorline = true
+vim.opt.showmode = true
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+
 -- plugin manager
 require("config.lazy")
 require("config.iterm")
@@ -59,8 +69,6 @@ vim.opt.expandtab = true -- Convert tabs to spaces
 vim.opt.shiftwidth = 4 -- Number of spaces for auto-indent
 vim.opt.tabstop = 4 -- Number of spaces a <Tab> counts for
 vim.opt.softtabstop = 4 -- Number of spaces <Tab> inserts in insert mode
--- Hide the status bar
-vim.opt.laststatus = 0
 
 -- Hide the "10,20" ruler position (if it still shows up)
 vim.opt.ruler = false

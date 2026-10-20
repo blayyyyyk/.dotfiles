@@ -5,6 +5,31 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+# >>> user-local Homebrew (~/.homebrew) >>>
+# /opt/homebrew is owned by another account and is NOT writable by this user.
+# ~/.homebrew is the personal prefix holding claude, direnv, fzf, zoxide, git, ...
+# Kept early so later prepends (nvm, ~/Library/Python, venvs) keep their precedence.
+typeset -U path PATH        # keep PATH entries unique; prevents dupes on re-source
+if [ -x "$HOME/.homebrew/bin/brew" ]; then
+  eval "$("$HOME/.homebrew/bin/brew" shellenv)"
+fi
+
+# Let OMO's tmux-compat bridge and OpenCode's CMUX hook find the cask CLI.
+export CMUX_OMO_CMUX_BIN="$HOME/.homebrew/bin/cmux"
+export CMUX_OPENCODE_CMUX_BIN="$HOME/.homebrew/bin/cmux"
+export OPENCODE_CMUX_PROGRESS=true
+export OPENCODE_CMUX_TRANSPORT=auto
+export OPENCODE_CMUX_LOG_TODOS=true
+export OPENCODE_CMUX_LOG_TOOLS=true
+export OPENCODE_CMUX_LOG_SUBAGENTS=true
+export OPENCODE_CMUX_GIT=true
+export OPENCODE_CMUX_KEEP_DONE_STATUS=true
+
+# rustup ships shims in ~/.cargo/bin that pick the right toolchain (rust-toolchain.toml,
+# +nightly, per-dir overrides). Brew also installs rust, so re-promote rustup above it.
+[ -d "$HOME/.cargo/bin" ] && path=("$HOME/.cargo/bin" $path)
+# <<< user-local Homebrew <<<
+
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
@@ -124,27 +149,26 @@ source $ZSH/oh-my-zsh.sh;
 
 # >>> my export init >>>
 export iam="$(whoami)"
-export CONDA_HOME="/home/${iam}/anaconda3"
-[[ ":${PATH}:" != *":${CONDA_HOME}/bin:"* ]] && export PATH="${CONDA_HOME}/bin:${PATH}"
 # <<< my export init <<<
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/opt/homebrew/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
-        . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh"
-    else
-        export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+# (conda init block removed: miniconda was uninstalled, and the block's else-branch
+#  pushed the nonexistent /opt/homebrew/Caskroom/miniconda/base/bin onto PATH.
+#  Re-run `conda init zsh` if you reinstall conda.)
 
 
 export PATH="$PATH:$HOME/.local/bin"
+
+# Claude Code has no tree-level folder-trust setting: it keys trust off each
+# directory's git root, and its parent walk stops there, so a trusted ~/dev
+# never covers the repos inside it. Pre-accept the key for anything under ~/dev
+# so the trust dialog never appears. ~/.local/bin/claude-trust-dev does the work
+# and is a no-op (no write, no config race) once a path is already trusted.
+claude() {
+  if [[ $PWD == $HOME/dev || $PWD/ == $HOME/dev/* ]]; then
+    claude-trust-dev "$PWD" >/dev/null 2>&1
+  fi
+  command claude "$@"
+}
 
 eval "$(zoxide init zsh --cmd cd)"
 
@@ -153,5 +177,12 @@ source <(fzf --zsh)
 
 # export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_FALLBACK_LIBRARY_PATH"
 # export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
-export PATH="$PATH:$HOME/.spicetify"
+[ -d "$HOME/.spicetify" ] && export PATH="$PATH:$HOME/.spicetify"
 
+[ -d "$HOME/Library/Python/3.9/bin" ] && export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
