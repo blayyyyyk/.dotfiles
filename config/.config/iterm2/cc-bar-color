@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Point iTerm2's pane-title-bar (Claude Code workgroup toolbar) colors at the
+colors of the current profile, for the currently active appearance.
+
+Usage: cc-bar-color [light|dark|auto|reset]   (default: auto)
+"""
+import plistlib, subprocess, sys, os
+
+PREFS = os.path.expanduser("~/Library/Preferences/com.googlecode.iterm2.plist")
+DOMAIN = "com.googlecode.iterm2"
+BG_KEY, FG_KEY = "paneTitleBarBackgroundColor", "paneTitleBarTextColor"
+
+
+def hexof(c):
+    return "#%02x%02x%02x" % tuple(
+        round(c.get(k, 0.0) * 255) for k in
+        ("Red Component", "Green Component", "Blue Component"))
+
+
+def system_mode():
+    r = subprocess.run(["defaults", "read", "-g", "AppleInterfaceStyle"],
+                       capture_output=True, text=True)
+    return "dark" if "Dark" in r.stdout else "light"
+
+
+def default_profile():
+    prefs = plistlib.load(open(PREFS, "rb"))
+    guid = prefs.get("Default Bookmark Guid")
+    profiles = prefs.get("New Bookmarks", [])
+    for p in profiles:
+        if p.get("Guid") == guid:
+            return p
+    return profiles[0]
+
+
+def main():
+    mode = (sys.argv[1] if len(sys.argv) > 1 else "auto").lower()
+    if mode == "reset":
+        for k in (BG_KEY, FG_KEY):
+            subprocess.run(["defaults", "delete", DOMAIN, k],
+                           capture_output=True)
+        print("reset to iTerm2 defaults (restart iTerm2 to apply)")
+        return
+    if mode == "auto":
+        mode = system_mode()
+    if mode not in ("light", "dark"):
+        sys.exit(f"unknown mode: {mode}")
+
+    p = default_profile()
+    suffix = " (Dark)" if mode == "dark" else " (Light)"
+    if not p.get("Use Separate Colors for Light and Dark Mode"):
+        suffix = ""
+    bg = hexof(p["Background Color" + suffix])
+    fg = hexof(p["Foreground Color" + suffix])
+
+    for key, val in ((BG_KEY, bg), (FG_KEY, fg)):
+        subprocess.run(["defaults", "write", DOMAIN, key, "-string", val],
+                       check=True)
+    print(f"profile {p.get('Name')!r} [{mode}] -> bar bg {bg}, text {fg}")
+    print("restart iTerm2 to apply")
+
+
+main()

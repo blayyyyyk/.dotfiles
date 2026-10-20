@@ -1,0 +1,5 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "claude-code-ansi",
+  "plugin": ["/Users/blake/.config/opencode/local/opencode-claude-style"]
+}

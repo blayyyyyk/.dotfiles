@@ -19,3 +19,10 @@ config/.config/opencode/package.json
 config/.config/opencode/package-lock.json
 config/.config/opencode/bun.lock
 __pycache__/
+config/.config/opencode/local/opencode-claude-style/
+config/.config/iterm2/AppSupport
+config/.config/iterm2/cc-status
+config/.config/iterm2/sockets/
+config/.config/iterm2/workgroup-triggers-backup.json
+config/.config/iterm2/layouts/*.json
+config/.config/iterm2/layouts/*.log

@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""Pre-accept Claude Code's folder-trust dialog for repos under ~/dev.
+
+Claude Code has no tree-level trust setting: it keys trust off a directory's
+*git root* (worktrees resolve to the main repo root), or the directory itself
+when it is not in a repo, and its parent-directory walk stops at that git root.
+So a trusted ~/dev never reaches inside a repo. This writes the key directly.
+
+  claude-trust-dev            sweep every git root under ~/dev
+  claude-trust-dev <path>     trust just <path>'s key (no-op if already trusted)
+
+Refuses any path outside ~/dev.
+"""
+import json, os, subprocess, sys, tempfile
+
+HOME  = os.path.expanduser("~")
+DEV   = os.path.join(HOME, "dev")
+CFG   = os.path.join(HOME, ".claude.json")
+
+DEFAULT_PROJECT = {
+    "allowedTools": [], "history": [], "mcpContextUris": [], "mcpServers": {},
+    "enabledMcpjsonServers": [], "disabledMcpjsonServers": [],
+    "hasTrustDialogAccepted": True,
+    "hasClaudeMdExternalIncludesApproved": False,
+    "hasClaudeMdExternalIncludesWarningShown": False,
+}
+
+
+def under_dev(path):
+    return path == DEV or path.startswith(DEV + os.sep)
+
+
+def git_root(path):
+    """Mirror Claude Code's git-root resolution. None when not in a repo."""
+    cur = os.path.abspath(path)
+    while True:
+        dot = os.path.join(cur, ".git")
+        if os.path.isdir(dot):
+            return cur
+        if os.path.isfile(dot):
+            # Worktree/submodule pointer. A worktree's gitdir has a `commondir`
+            # naming the main repo; a submodule's does not, so it stays itself.
+            try:
+                line = open(dot, encoding="utf-8").read().strip()
+            except OSError:
+                return cur
+            if not line.startswith("gitdir:"):
+                return cur
+            gitdir = os.path.normpath(os.path.join(cur, line[7:].strip()))
+            commondir = os.path.join(gitdir, "commondir")
+            if not os.path.isfile(commondir):
+                return cur
+            try:
+                common = open(commondir, encoding="utf-8").read().strip()
+            except OSError:
+                return cur
+            return os.path.dirname(os.path.normpath(os.path.join(gitdir, common)))
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            return None
+        cur = parent
+
+
+def trust_key(path):
+    """Claude Code's persisted trust key: the git root, else the path itself."""
+    return git_root(path) or os.path.abspath(path)
+
+
+def already_covered(projects, path):
+    """Mirror Claude Code's parent walk: up from path, bounded by its git root.
+
+    A non-git folder under ~/dev is already covered by the ~/dev entry, so there
+    is no point writing an entry of its own.
+    """
+    boundary = git_root(path)
+    cur = os.path.abspath(path)
+    while True:
+        if boundary is not None and cur != boundary and not cur.startswith(boundary + os.sep):
+            return False
+        if projects.get(cur, {}).get("hasTrustDialogAccepted") is True:
+            return True
+        if cur == boundary:
+            return False
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            return False
+        cur = parent
+
+
+def sweep():
+    keys = {DEV}
+    found = subprocess.run(
+        ["find", DEV, "-maxdepth", "4", "-name", ".git",
+         "-not", "-path", "*/.uv-cache/*", "-not", "-path", "*/node_modules/*", "-print"],
+        capture_output=True, text=True).stdout.split("\n")
+    for line in found:
+        if line.strip():
+            keys.add(trust_key(os.path.dirname(line.strip())))
+    return {k for k in keys if under_dev(k)}
+
+
+def main():
+    if len(sys.argv) > 2:
+        sys.exit("usage: claude-trust-dev [path]")
+
+    if len(sys.argv) == 2:
+        target = os.path.abspath(os.path.expanduser(sys.argv[1]))
+        if not under_dev(target):
+            sys.exit(f"claude-trust-dev: {target} is not under {DEV}")
+        targets = [target]
+        quiet = True
+    else:
+        targets = sorted(sweep())
+        quiet = False
+
+    try:
+        with open(CFG, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except (OSError, ValueError) as exc:
+        sys.exit(f"claude-trust-dev: cannot read {CFG}: {exc}")
+
+    projects = cfg.setdefault("projects", {})
+    keys, changed = [], []
+    for path in targets:
+        if already_covered(projects, path):
+            continue
+        k = trust_key(path)
+        if not under_dev(k):
+            continue
+        keys.append(k)
+        entry = projects.get(k)
+        if entry is None:
+            projects[k] = dict(DEFAULT_PROJECT)
+            changed.append(k)
+        elif entry.get("hasTrustDialogAccepted") is not True:
+            entry["hasTrustDialogAccepted"] = True
+            changed.append(k)
+
+    # No write at all in the common case, so a running Claude Code is never raced.
+    if not changed:
+        if not quiet:
+            print(f"claude-trust-dev: {len(targets)} paths already trusted")
+        return
+
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(CFG))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, CFG)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+    print(f"claude-trust-dev: trusted {len(changed)} new path(s)")
+    for k in changed:
+        print("  + " + k)
+
+
+if __name__ == "__main__":
+    main()

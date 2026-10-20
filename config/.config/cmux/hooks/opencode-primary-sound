@@ -1,0 +1,24 @@
+#!/bin/sh
+set -u
+
+MARKER='[[opencode-main-attention]] '
+PLAYER=${CMUX_PRIMARY_SOUND_PLAYER:-/usr/bin/afplay}
+SOUND=${CMUX_PRIMARY_SOUND_FILE:-$HOME/.local/share/cmux/sounds/bomboclatt.m4a}
+
+if ! PAYLOAD=$(jq -c 'if type == "object" then . else error("notification must be an object") end' 2>/dev/null); then
+  exit 0
+fi
+
+IS_MARKED=$(printf '%s' "$PAYLOAD" | jq -r --arg marker "$MARKER" '((.notification.title? | type) == "string") and (.notification.title | startswith($marker))')
+if [ "$IS_MARKED" != "true" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
+if [ -x "$PLAYER" ] && [ -f "$SOUND" ]; then
+  "$PLAYER" "$SOUND" </dev/null >/dev/null 2>&1 &
+  printf '%s' "$PAYLOAD" | jq -c --arg marker "$MARKER" '{notification: {title: (.notification.title[($marker | length):])}, effects: {sound: false}}'
+  exit 0
+fi
+
+printf '%s' "$PAYLOAD" | jq -c --arg marker "$MARKER" '{notification: {title: (.notification.title[($marker | length):])}}'

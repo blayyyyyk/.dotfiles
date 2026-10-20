@@ -1,0 +1,13 @@
+[user]
+	name = Blake Moody
+	email = 32070003+blayyyyyk@users.noreply.github.com
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+# Machine-specific settings (the gh credential helper's absolute path, which
+# differs between ~/.homebrew, /opt/homebrew and Linuxbrew) live in
+# ~/.gitconfig.local. setup.sh writes it; git skips the include if it's missing.
+[include]
+	path = ~/.gitconfig.local

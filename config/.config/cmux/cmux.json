@@ -1,0 +1,43 @@
+{
+  "$schema" : "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+  "customSidebars" : {
+    "renderer" : "inProcess"
+  },
+  "notifications" : {
+    "hooks" : [
+    ]
+  },
+  "workspaceColors" : {
+    "colors" : {
+      "Red" : "#EA6962",
+      "Crimson" : "#EA6962",
+      "Orange" : "#E78A4E",
+      "Amber" : "#D8A657",
+      "Olive" : "#A9B665",
+      "Green" : "#A9B665",
+      "Teal" : "#89B482",
+      "Aqua" : "#89B482",
+      "Blue" : "#7DAEA3",
+      "Navy" : "#7DAEA3",
+      "Indigo" : "#D3869B",
+      "Purple" : "#D3869B",
+      "Magenta" : "#D3869B",
+      "Rose" : "#EA6962",
+      "Brown" : "#A47148",
+      "Charcoal" : "#928374"
+    }
+  },
+  "sidebar" : {
+    "hideAllDetails" : false,
+    "showBranchDirectory" : true,
+    "stackBranchDirectory" : false,
+    "branchLayout" : "vertical",
+    "pathLastSegmentOnly" : false,
+    "watchGitStatus" : true,
+    "showLog" : true,
+    "showPullRequests" : true,
+    "makePullRequestsClickable" : true,
+    "openPullRequestLinksInCmuxBrowser" : true
+  },
+  "schemaVersion" : 1
+}

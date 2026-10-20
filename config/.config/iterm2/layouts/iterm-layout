@@ -1,0 +1,10 @@
+#!/bin/zsh
+# usage: iterm-layout save [name] | restore [name] [--dry] | list
+PY=~/.config/iterm2/AppSupport/uv/venvs/3.12/bin/python
+D=~/.config/iterm2/layouts
+case "$1" in
+  save)    env -u PYTHONPATH $PY $D/save_layout.py ${2:+$2} ;;
+  restore) shift; env -u PYTHONPATH $PY $D/restore_layout.py "$@" ;;
+  list)    ls -1t $D/*.json ;;
+  *) echo "usage: iterm-layout save [name] | restore [name] [--dry] | list"; exit 1 ;;
+esac
