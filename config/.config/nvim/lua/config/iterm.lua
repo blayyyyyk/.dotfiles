@@ -109,16 +109,29 @@ local function update_iterm2_status()
 	set_iterm_var("nv_pos", position)
 end
 
--- Create Autocommands
+-- Only iTerm2 reads these escape sequences. Elsewhere (kitty, cmux, Linux,
+-- headless runs) they'd just be written to the terminal or stdout.
+if vim.env.TERM_PROGRAM ~= "iTerm.app" and vim.env.LC_TERMINAL ~= "iTerm2" then
+	return
+end
+
+-- Create Autocommands once a UI is attached, so headless runs stay quiet.
 local group = vim.api.nvim_create_augroup("iTerm2Status", { clear = true })
-vim.api.nvim_create_autocmd({
-	"CursorMoved",
-	"CursorMovedI",
-	"BufEnter",
-	"DiagnosticChanged",
-	"ModeChanged",
-	"TextChanged",
-}, {
+vim.api.nvim_create_autocmd("UIEnter", {
 	group = group,
-	callback = update_iterm2_status,
+	once = true,
+	callback = function()
+		vim.api.nvim_create_autocmd({
+			"CursorMoved",
+			"CursorMovedI",
+			"BufEnter",
+			"DiagnosticChanged",
+			"ModeChanged",
+			"TextChanged",
+		}, {
+			group = group,
+			callback = update_iterm2_status,
+		})
+		update_iterm2_status()
+	end,
 })

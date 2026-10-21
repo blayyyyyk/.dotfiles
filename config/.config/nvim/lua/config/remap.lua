@@ -58,7 +58,21 @@ map("n", "<leader>dd", vim.diagnostic.open_float, { desc = "Show line diagnostic
 map("n", "<leader>dq", vim.diagnostic.setloclist, { desc = "Diagnostics list" })
 
 map("n", "<leader>gg", "<cmd>LazyGit<CR>", { desc = "Open LazyGit" })
-map({ "n", "t" }, "<leader>tt", "<cmd>ToggleTerm<CR>", { desc = "Toggle terminal" })
+-- Normal mode only: a terminal-mode <Space> mapping makes every space typed in
+-- the terminal wait for 'timeoutlen'. Ctrl-\ toggles from inside the terminal.
+map("n", "<leader>tt", "<cmd>ToggleTerm<CR>", { desc = "Toggle terminal" })
+map("n", "<leader>uF", "<cmd>FormatToggle<CR>", { desc = "Toggle format on save" })
+
+-- Neovim 0.11+ maps grn/gra/grr/gri/grt by default, which makes `gr`
+-- (references, above) wait for 'timeoutlen'. <Space>rn and <Space>ca cover
+-- rename and code actions.
+for _, mode in ipairs({ "n", "x" }) do
+	for _, keymap in ipairs(vim.api.nvim_get_keymap(mode)) do
+		if keymap.lhs:match("^gr.$") then
+			pcall(vim.keymap.del, mode, keymap.lhs)
+		end
+	end
+end
 
 map("n", "<A-Down>", "<cmd>MoveLine(1)<CR>", { desc = "Move line down" })
 map("n", "<A-Up>", "<cmd>MoveLine(-1)<CR>", { desc = "Move line up" })

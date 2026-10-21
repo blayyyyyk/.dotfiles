@@ -8,6 +8,7 @@ return {
 			{ "<leader>e", group = "Explorer" },
 			{ "<leader>f", group = "Find" },
 			{ "<leader>g", group = "Git" },
+			{ "<leader>l", group = "LazyGit" },
 			{ "<leader>r", group = "Refactor" },
 			{ "<leader>s", group = "Symbols" },
 			{ "<leader>t", group = "Terminal" },

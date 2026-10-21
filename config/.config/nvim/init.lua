@@ -1,77 +1,25 @@
 -- file: init.lua
-vim.g.mapleader = "<Space>"
+-- Leader must be set before lazy.nvim loads any plugin keymaps.
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
 
-vim.opt.mouse = "a"
-vim.opt.mousemodel = "extend"
-vim.opt.termguicolors = true
-vim.opt.laststatus = 2
-vim.opt.signcolumn = "yes"
-vim.opt.cursorline = true
-vim.opt.showmode = true
-vim.opt.splitright = true
-vim.opt.splitbelow = true
+require("config.options")
+
+-- nvim-treesitter's main branch and the vim.lsp.config API need Neovim 0.12.
+-- On anything older, skip plugins instead of erroring in every buffer.
+if vim.fn.has("nvim-0.12") == 0 then
+	vim.schedule(function()
+		vim.notify(
+			"This config needs Neovim 0.12+ (found " .. tostring(vim.version()) .. "). Plugins are disabled.",
+			vim.log.levels.WARN
+		)
+	end)
+	return
+end
 
 -- plugin manager
 require("config.lazy")
 require("config.iterm")
 require("config.remap")
 require("config.vscode_remap")
-require("config.zed_remap")
-
--- language servers
-vim.lsp.enable({
-	"pyright",
-	"clangd",
-	"lua_ls",
-})
-
--- builtin vim config
-vim.cmd("source ~/.config/nvim/config.vim")
--- -- 5A524C
-
-vim.opt.fillchars = {
-	horiz = "━",
-	horizup = "┻",
-	horizdown = "┳",
-	vert = "┃",
-	vertleft = "┫",
-	vertright = "┣",
-	verthoriz = "╋",
-}
-
-local border = {
-	{ "┌", "FloatBorder" },
-	{ "─", "FloatBorder" },
-	{ "┐", "FloatBorder" },
-	{ "│", "FloatBorder" },
-	{ "┘", "FloatBorder" },
-	{ "─", "FloatBorder" },
-	{ "└", "FloatBorder" },
-	{ "│", "FloatBorder" },
-}
-
--- Add border to the diagnostic popup window
-vim.diagnostic.config({
-	virtual_text = {
-		prefix = "■ ", -- Could be '●', '▎', 'x', '■', , 
-	},
-	float = { border = border },
-})
-
-vim.api.nvim_create_autocmd("BufWritePre", {
-	pattern = "*",
-	callback = function(args)
-		require("conform").format({ bufnr = args.buf })
-	end,
-})
-
-vim.opt.expandtab = true -- Convert tabs to spaces
-vim.opt.shiftwidth = 4 -- Number of spaces for auto-indent
-vim.opt.tabstop = 4 -- Number of spaces a <Tab> counts for
-vim.opt.softtabstop = 4 -- Number of spaces <Tab> inserts in insert mode
-
--- Hide the "10,20" ruler position (if it still shows up)
-vim.opt.ruler = false
-
--- Hide the command line until you actually type a command (Requires Neovim 0.8+)
-vim.opt.cmdheight = 0
+require("config.doctor").setup()

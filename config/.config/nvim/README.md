@@ -36,29 +36,40 @@ move, press `Enter` to open, and press `Esc` to close. In the terminal, press
 
 ### 1 Plugins
 Plugin configurations are located in `nvim/lua/plugins`. Each plugin config corresponds to its lua file.
+Versions are pinned in `lazy-lock.json`; a new machine installs exactly those commits.
 
 ### 2 Keymaps
 Custom keymaps I've set are in `nvim/lua/config/remap.lua`. A lot of them are inspired from vscode.
+Format on save is on; `Space u F` (or `:FormatToggle`) turns it off for the session.
 
-### 3 Language Servers
-Language server configurations are located in `nvim/lua/lsp`. The server config corresponds to its `.lua` file. If no config is provided, I'm unsure if this will error in neovim but you can go here for [default configs](https://github.com/neovim/nvim-lspconfig/tree/master/lsp).
+### 3 Language servers, formatters and parsers
+Everything the config expects is listed once in `nvim/lua/config/tools.lua`:
+language servers (by [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig/tree/master/lsp)
+name), Mason tools (formatters, linters, the tree-sitter CLI) and tree-sitter parsers.
+Mason installs the servers and tools on first start, nvim-treesitter installs the
+parsers, and other languages' parsers install the first time you open such a file.
 
-##### 3.1 Adding an LSP
-Make sure when you add an LSP you add it to the list in `nvim/init.lua`.
-```lua
--- file: init.lua
+Per-server settings come from nvim-lspconfig. Local overrides go in
+`nvim/after/lsp/<server>.lua`; for example `after/lsp/pyright.lua` points pyright at the
+project's `.venv` so its packages resolve even when nvim wasn't started from an
+activated shell.
 
--- plugin manager
-require("config.lazy")
-require("config.remap")
+##### 3.1 Adding a language
+1. Add the server to `M.servers` in `lua/config/tools.lua` (and a formatter to
+   `M.tools` plus `lua/plugins/conform.nvim.lua`, and the parser to `M.parsers`).
+2. Run `~/.dotfiles/scripts/nvim-doctor.sh`. It installs the new pieces and checks them.
 
--- language servers
-vim.lsp.enable({
-    'pyright',
-    'clangd',
-    'lua_ls', -- <- add it under here
-})
+### 4 Keeping it working
+Neovim 0.12+ is required (nvim-treesitter's `main` branch needs it); older versions start
+with plugins disabled instead of erroring.
 
--- builtin vim config
-vim.cmd('source ~/.config/nvim/config.vim')
-```
+| Command | What it does |
+| --- | --- |
+| `:checkhealth config` | Quick check: every plugin, server, tool, formatter and parser is installed |
+| `:ConfigDoctor` | The quick check plus a smoke test: opens real files and confirms each server attaches and reports diagnostics, each formatter formats, and tree-sitter highlights |
+| `:ConfigSync` / `:ConfigSync!` | Install anything missing (`!` first resets plugins to `lazy-lock.json`) |
+| `~/.dotfiles/scripts/nvim-doctor.sh` | Sync, then run the doctor headless; exits non-zero on any failure |
+| `~/.dotfiles/scripts/nvim-update.sh` | Update plugins and parsers, keep the update only if the doctor passes, otherwise roll `lazy-lock.json` back |
+
+CI runs `setup.sh --ci` (which ends with the doctor) on fresh macOS and Ubuntu machines on
+every push and weekly, so a lockfile bump that breaks something fails there first.
