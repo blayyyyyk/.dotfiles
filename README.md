@@ -21,17 +21,39 @@ I mainly use [Zed](https://zed.dev/) for my editor of choice, occasionally using
 I mainly work with [Python 3.11](https://www.python.org/) for my current research projects. I use [Miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main) for my environment management. I am a supporter of the experimental, AI-focused, Python superset called Mojo and use it in my free time. Most of my conda environments are started with Pytorch, Pandas, Numpy, and OpenCV. For web development, I use NextJS app router configured with TypeScript and TailwindCSS, and FastAPI paired with SQLite for backend services.
 
 # 1.1.0 Quickstart Guide
-1. Fork and clone the repository to your local machines to your home/user directory.
+Works on macOS (Apple Silicon or Intel) and Linux (apt, dnf or pacman).
+
+1. Clone the repository into your home directory.
 ```
-cd ~
-git clone [your fork url]
+git clone https://github.com/blayyyyyk/.dotfiles.git ~/.dotfiles
 ```
-2. Navigate into the .dotfiles directory and run the install script
+2. Run the setup script. It is safe to re-run: finished steps are skipped, and any file it
+   would replace with a link is moved to `~/.dotfiles-backup/<timestamp>/` first.
 ```
 cd ~/.dotfiles
-chmod x+ install.sh
-./install.sh
+./setup.sh            # or ./setup.sh --dry-run to see what it would do
 ```
 
+`setup.sh` installs the system prerequisites (Xcode Command Line Tools, or build tools via the
+Linux package manager), Homebrew and the `Brewfile` (macOS apps only on macOS), rustup and uv,
+Oh My Zsh with powerlevel10k, links the packages below with GNU Stow, writes the machine-local
+`~/.gitconfig.local`, installs the tmux plugins, and installs and verifies the Neovim language
+servers, formatters and parsers. Options: `--upgrade`, `--no-brew`, `--no-nvim`, `--ci`.
+
+| Package | Links |
+| --- | --- |
+| `config` | `~/.config/{nvim,kitty,tmux,prettier,zed,cmux,opencode,iterm2}` |
+| `zsh` | `~/.zshrc`, `~/.p10k.zsh` |
+| `git` | `~/.gitconfig`, `~/.config/git/ignore` |
+| `bin` | `~/.local/bin/claude-trust-dev` |
+| `vscode` | `~/.vscode` |
+| `hammerspoon` (macOS) | `~/.hammerspoon/init.lua` |
+
+Machine-specific settings stay out of the repo: `~/.gitconfig.local` and `~/.zshrc.local`.
+
+To try the Linux path in a throwaway Ubuntu container: `./setup_container.sh`.
+
 # 1.2.0 Manual Setup Guide
-**A manual setup guide is coming soon. For the time being, please refer to `brew_pkgs.txt` for homebrew packages.**
+Install the packages in `Brewfile` with `brew bundle`, then link what you want with
+`stow --target="$HOME" <package>` from `~/.dotfiles`. See
+[config/.config/nvim/README.md](config/.config/nvim/README.md) for the Neovim setup.

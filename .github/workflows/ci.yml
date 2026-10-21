@@ -1,0 +1,40 @@
+# Runs setup.sh on fresh macOS and Ubuntu machines, then the Neovim doctor:
+# every language server must attach and report diagnostics, every formatter
+# must format, every parser must load. The weekly run catches breakage from
+# outside the repo (dead download URLs, registry changes) against the pinned
+# lazy-lock.json before it reaches a real machine.
+name: ci
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck -x setup.sh setup_container.sh scripts/*.sh
+
+  setup:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: .dotfiles
+      - name: setup.sh --ci
+        run: ./.dotfiles/setup.sh --ci
+      - name: zsh starts cleanly
+        run: |
+          zsh -ic 'echo ZSH_OK' 2>&1 | tee zsh.log
+          grep -q ZSH_OK zsh.log
+          ! grep -qE 'command not found|no such file' zsh.log
