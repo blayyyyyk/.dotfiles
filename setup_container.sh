@@ -1,30 +1,31 @@
-container rm -f dotfile-test 2>/dev/null || true
+#!/usr/bin/env bash
+# Try setup.sh on a throwaway Linux machine: a fresh Ubuntu container with a
+# sudo-capable user, a clean clone of this repo's committed HEAD, and an
+# interactive zsh at the end to poke around.
+#
+#   ./setup_container.sh [image]      default ubuntu:24.04
+#
+# Needs docker, or Apple's `container` CLI.
+set -euo pipefail
 
-container run -it \
-  --name dotfile-test \
-  --dns 8.8.8.8 \
-  -v ~/.dotfiles:/tmp/.dotfiles:ro \
-  ubuntu:latest \
-  bash -c '
-    apt-get update && \
-    apt-get install -y sudo git && \
-    rm -rf /var/lib/apt/lists/*;
-    
-    # Create user if it doesn"t exist (Standard Ubuntu images don"t have it)
-    id -u ubuntu &>/dev/null || useradd -m -s /bin/bash ubuntu
-    echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+image="${1:-ubuntu:24.04}"
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if command -v docker >/dev/null 2>&1; then
+  runtime=docker
+elif command -v container >/dev/null 2>&1; then
+  runtime=container
+else
+  echo "needs docker or Apple's container CLI" >&2
+  exit 1
+fi
 
-    echo "changing perms";
-    cp -r /tmp/.dotfiles /home/ubuntu/.dotfiles;
-    mkdir -p /home/linuxbrew/.linuxbrew && chown -R ubuntu:ubuntu /home/linuxbrew
-    chown -R ubuntu:ubuntu /home/ubuntu/.dotfiles;
-    
-    echo "setup init starting";
-    passwd -d ubuntu;
-    cd /home/ubuntu/.dotfiles;
-    /bin/bash setup_init.sh;
-    
-    echo "setup brew starting";
-    # Use single quotes inside the double quotes for the sudo command
-    sudo -u ubuntu bash -c "cd ~/.dotfiles && chmod +x ./setup_brew.sh && ./setup_brew.sh && chmod +x ./setup_zsh.sh && ./setup_zsh.sh"; bash
-  '
+"$runtime" run --rm -it -v "$repo:/src:ro" "$image" bash -c '
+  set -e
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq sudo git ca-certificates >/dev/null
+  useradd -m -s /bin/bash dev
+  echo "dev ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/dev
+  sudo -u dev git -c safe.directory="*" clone -q /src /home/dev/.dotfiles
+  sudo -u dev -H bash -c "cd ~/.dotfiles && ./setup.sh" || true
+  exec sudo -u dev -H zsh -l
+'

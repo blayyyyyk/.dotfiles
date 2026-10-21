@@ -5,18 +5,26 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# >>> user-local Homebrew (~/.homebrew) >>>
-# /opt/homebrew is owned by another account and is NOT writable by this user.
-# ~/.homebrew is the personal prefix holding claude, direnv, fzf, zoxide, git, ...
+# >>> Homebrew >>>
+# The first prefix that exists wins. On this Mac /opt/homebrew is owned by
+# another account and NOT writable, so the personal prefix ~/.homebrew (holding
+# claude, direnv, fzf, zoxide, git, ...) comes first. Linuxbrew covers Linux.
 # Kept early so later prepends (nvm, ~/Library/Python, venvs) keep their precedence.
 typeset -U path PATH        # keep PATH entries unique; prevents dupes on re-source
-if [ -x "$HOME/.homebrew/bin/brew" ]; then
-  eval "$("$HOME/.homebrew/bin/brew" shellenv)"
-fi
+for _brew in "$HOME/.homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew \
+             /home/linuxbrew/.linuxbrew/bin/brew "$HOME/.linuxbrew/bin/brew"; do
+  if [ -x "$_brew" ]; then
+    eval "$("$_brew" shellenv)"
+    break
+  fi
+done
+unset _brew
 
 # Let OMO's tmux-compat bridge and OpenCode's CMUX hook find the cask CLI.
-export CMUX_OMO_CMUX_BIN="$HOME/.homebrew/bin/cmux"
-export CMUX_OPENCODE_CMUX_BIN="$HOME/.homebrew/bin/cmux"
+if [ -n "$HOMEBREW_PREFIX" ] && [ -x "$HOMEBREW_PREFIX/bin/cmux" ]; then
+  export CMUX_OMO_CMUX_BIN="$HOMEBREW_PREFIX/bin/cmux"
+  export CMUX_OPENCODE_CMUX_BIN="$HOMEBREW_PREFIX/bin/cmux"
+fi
 export OPENCODE_CMUX_PROGRESS=true
 export OPENCODE_CMUX_TRANSPORT=auto
 export OPENCODE_CMUX_LOG_TODOS=true
@@ -28,7 +36,7 @@ export OPENCODE_CMUX_KEEP_DONE_STATUS=true
 # rustup ships shims in ~/.cargo/bin that pick the right toolchain (rust-toolchain.toml,
 # +nightly, per-dir overrides). Brew also installs rust, so re-promote rustup above it.
 [ -d "$HOME/.cargo/bin" ] && path=("$HOME/.cargo/bin" $path)
-# <<< user-local Homebrew <<<
+# <<< Homebrew <<<
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
@@ -104,19 +112,16 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git direnv)
 
-# NOTE: Everything below should always be at the end of this file
-if [ ! -f $ZSH/oh-my-zsh.sh ]; then
-    cp ~/.zshrc ~/.zshrc-tmp;
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc;
-    cp ~/.zshrc-tmp ~/.zshrc;
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k";
-    
+# Oh My Zsh and powerlevel10k are installed by ~/.dotfiles/setup.sh. Without
+# them, fall back to a plain prompt instead of failing every new shell.
+if [ -f "$ZSH/oh-my-zsh.sh" ]; then
+  [ -d "${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k" ] || ZSH_THEME="robbyrussell"
+  source "$ZSH/oh-my-zsh.sh"
+  # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+  [[ "$ZSH_THEME" != powerlevel10k/* || ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+else
+  print -P "%F{yellow}Oh My Zsh is missing; run ~/.dotfiles/setup.sh%f"
 fi
-    
-source $ZSH/oh-my-zsh.sh;
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # User configuration
 
@@ -170,10 +175,8 @@ claude() {
   command claude "$@"
 }
 
-eval "$(zoxide init zsh --cmd cd)"
-
 # Set up fzf key bindings and fuzzy completion
-source <(fzf --zsh)
+(( $+commands[fzf] )) && source <(fzf --zsh)
 
 # export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_FALLBACK_LIBRARY_PATH"
 # export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -181,8 +184,22 @@ source <(fzf --zsh)
 
 [ -d "$HOME/Library/Python/3.9/bin" ] && export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
+# nvm from its own installer (~/.nvm) or from Homebrew's nvm formula.
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+elif [ -n "$HOMEBREW_PREFIX" ] && [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ]; then
+  mkdir -p "$NVM_DIR"
+  \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+  [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm"
+fi
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# Machine-specific settings that shouldn't be in a public repo.
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+
+# zoxide must be initialized last: anything that adds prompt hooks after it
+# (iTerm2 integration, nvm) triggers zoxide's "possible configuration issue".
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"

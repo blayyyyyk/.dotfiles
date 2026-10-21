@@ -26,3 +26,4 @@ config/.config/iterm2/sockets/
 config/.config/iterm2/workgroup-triggers-backup.json
 config/.config/iterm2/layouts/*.json
 config/.config/iterm2/layouts/*.log
+hammerspoon/.hammerspoon/Spoons/
