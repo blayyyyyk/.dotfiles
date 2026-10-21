@@ -286,15 +286,24 @@ local function smoke(report)
 		end
 		for _, name in ipairs(case.diagnose or {}) do
 			if enabled[name] then
-				local got = vim.wait(90000, function()
+				local function has_diagnostics()
 					return client_diagnostics(buf, name) > 0
-				end, 250)
+				end
+				local got = vim.wait(60000, has_diagnostics, 250)
+				local nudged = false
+				if not got then
+					-- A server that missed its first analysis (slow cold start)
+					-- re-checks on an edit; a broken one still reports nothing.
+					nudged = true
+					vim.api.nvim_buf_set_lines(buf, -1, -1, false, { "" })
+					got = vim.wait(60000, has_diagnostics, 250)
+				end
 				report:check(
 					"Smoke test",
 					label .. ": " .. name .. " reports diagnostics",
 					got,
-					"no diagnostics within 90s",
-					client_diagnostics(buf, name) .. " found"
+					"no diagnostics within 60s, nor 60s after an edit",
+					client_diagnostics(buf, name) .. " found" .. (nudged and " after an edit" or "")
 				)
 			end
 		end
